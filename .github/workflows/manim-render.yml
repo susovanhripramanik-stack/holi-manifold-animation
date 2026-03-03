@@ -14,21 +14,29 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
-    - name: Install system dependencies   # ✅ FIXED INDENTATION
+        cache: 'pip'
+
+    # 🔧 Fix for manimpango build error
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           libcairo2-dev \
           pkg-config \
+          python3-dev \
+          pango1.0-tools \
+          libpango1.0-dev \
+          libglib2.0-dev \
+          libffi-dev \
           sox \
           ffmpeg \
           texlive-latex-base \
@@ -36,46 +44,46 @@ jobs:
           texlive-latex-extra \
           cm-super \
           dvipng
-    
+
     - name: Install Python dependencies
       run: |
-        pip install --upgrade pip
-        pip install manim numpy
-    
+        python -m pip install --upgrade pip
+        pip install wheel
+        pip install manim numpy --prefer-binary
+
     - name: Render Manim animation (Low Quality - Fast)
       run: |
-        manim -pql holi_animation.py HoliManifold || true
+        manim -pql holi_animation.py HoliManifold
       timeout-minutes: 60
-    
+
     - name: Check if video was created
       run: |
-        if [ -f "videos/1080p60/holi_animation.mp4" ]; then
-          ls -lh videos/1080p60/holi_animation.mp4
-          echo "Video rendered successfully!"
+        if [ -d "media/videos" ]; then
+          echo "Video files found:"
+          find media/videos -type f -name "*.mp4"
         else
-          echo "Video file not found, checking for partial renders..."
-          find videos -type f -name "*.mp4" -o -name "*.mov" 2>/dev/null || echo "No video files found"
+          echo "No media directory found."
         fi
-    
+
     - name: Upload video artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: holi-manifold-animation
-        path: videos/
+        path: media/videos/
         retention-days: 30
-    
+
     - name: Create release with video
       if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
       uses: softprops/action-gh-release@v1
       with:
         tag_name: render-${{ github.run_number }}
-        files: videos/1080p60/holi_animation.mp4
+        files: media/videos/**/*.mp4
         body: |
           🎨 Holi Manifold Animation Render #${{ github.run_number }}
-          
+
           ✨ Rendered automatically on commit
-          
+
           **Animation Details:**
           - 2200 colorful particles
           - Torus manifold visualization
@@ -83,7 +91,7 @@ jobs:
           - Happy Holi message
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Comment on PR
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
