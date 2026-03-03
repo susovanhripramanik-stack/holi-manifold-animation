@@ -23,7 +23,7 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Install system dependencies   # ✅ Fixed indentation
+    - name: Install system dependencies   # ✅ FIXED INDENTATION
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -51,10 +51,10 @@ jobs:
       run: |
         if [ -f "videos/1080p60/holi_animation.mp4" ]; then
           ls -lh videos/1080p60/holi_animation.mp4
-          echo "✅ Video rendered successfully!"
+          echo "Video rendered successfully!"
         else
-          echo "⚠️ Video file not found, checking for partial renders..."
-          find videos -type f \( -name "*.mp4" -o -name "*.mov" \) 2>/dev/null || echo "No video files found"
+          echo "Video file not found, checking for partial renders..."
+          find videos -type f -name "*.mp4" -o -name "*.mov" 2>/dev/null || echo "No video files found"
         fi
     
     - name: Upload video artifact
